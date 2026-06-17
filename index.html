@@ -1,1058 +1,662 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ארץ עיר — המשחק</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drop Log</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
-    :root {
-      --bg: #0d0f1a;
-      --surface: #161929;
-      --border: #252a42;
-      --accent: #f5c842;
-      --accent2: #e85d3a;
-      --text: #eef0f8;
-      --muted: #6b7399;
-      --green: #2dbe74;
-      --radius: 14px;
-    }
+  :root{
+    --bg:#000000;
+    --surface:#0c0c0c;
+    --surface-raised:#141414;
+    --line:#232323;
+    --ink:#f2f0ec;
+    --ink-dim:#8a8a86;
+    --ink-faint:#4a4a47;
 
-    body {
-      font-family: 'Heebo', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      direction: rtl;
-    }
+    --exo:#5b9bd5;
+    --exo-dim:#274154;
+    --fml:#e0a23c;
+    --fml-dim:#4a3a1a;
 
-    #root { min-height: 100vh; }
+    --done:#5fae7e;
+    --done-bg:#0f1f15;
+    --overdue:#e2685a;
+    --overdue-bg:#241310;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  body{padding-bottom:60px;}
 
-    /* ── LAYOUT ── */
-    .screen {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 16px;
-    }
+  /* ---------- header ---------- */
+  .header{
+    padding:30px 20px 20px;
+    border-bottom:1px solid var(--line);
+  }
+  .eyebrow{
+    font-size:10.5px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin:0 0 10px 0;
+    font-weight:500;
+  }
+  h1{
+    font-family:'Fraunces', Georgia, serif;
+    font-optical-sizing:auto;
+    font-size:34px;
+    font-weight:480;
+    letter-spacing:-0.01em;
+    margin:0;
+    color:var(--ink);
+  }
+  .now-strip{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:11px 20px;
+    border-bottom:1px solid var(--line);
+    font-size:11.5px;
+    color:var(--ink-dim);
+    letter-spacing:0.02em;
+  }
+  .now-strip .live{
+    color:var(--done);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .live::before{
+    content:"";
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--done);
+    display:inline-block;
+    box-shadow:0 0 0 0 rgba(95,174,126,0.6);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(95,174,126,0.5);}
+    70%{box-shadow:0 0 0 6px rgba(95,174,126,0);}
+    100%{box-shadow:0 0 0 0 rgba(95,174,126,0);}
+  }
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 32px;
-      width: 100%;
-      max-width: 480px;
-    }
+  /* ---------- summary ---------- */
+  .summary{
+    display:flex;
+    gap:1px;
+    background:var(--line);
+    margin:18px 16px 0;
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .pill{
+    flex:1;
+    background:var(--surface);
+    padding:14px 14px 12px;
+    text-align:left;
+  }
+  .pill .num{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:26px;
+    font-weight:500;
+    line-height:1;
+  }
+  .pill .lbl{
+    font-size:10px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin-top:5px;
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+  .pill.exocin .dot{background:var(--exo);}
+  .pill.fml .dot{background:var(--fml);}
 
-    .card-wide { max-width: 700px; }
+  /* ---------- next up ---------- */
+  .next-up{
+    margin:14px 16px 0;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 18px;
+    background:var(--surface);
+    position:relative;
+  }
+  .next-up.is-overdue{border-color:rgba(226,104,90,0.4);background:var(--overdue-bg);}
+  .next-up .tag{
+    font-size:10px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    font-weight:600;
+  }
+  .next-up.is-overdue .tag{color:var(--overdue);}
+  .next-up .when{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:30px;
+    font-weight:480;
+    margin:6px 0 3px;
+    letter-spacing:-0.01em;
+  }
+  .next-up .what{
+    font-size:13px;
+    color:var(--ink-dim);
+  }
 
-    /* ── LOGO ── */
-    .logo {
-      font-size: 48px;
-      font-weight: 900;
-      letter-spacing: -2px;
-      line-height: 1;
-      margin-bottom: 8px;
-    }
-    .logo span { color: var(--accent); }
-    .logo-sub {
-      color: var(--muted);
-      font-size: 14px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 36px;
-    }
+  .report-btn{
+    display:block;
+    width:calc(100% - 32px);
+    margin:10px 16px 0;
+    background:var(--ink);
+    color:#000;
+    border:none;
+    border-radius:12px;
+    padding:15px 18px;
+    font-family:inherit;
+    font-size:14.5px;
+    font-weight:600;
+    letter-spacing:0.01em;
+    cursor:pointer;
+  }
+  .report-btn:active{opacity:0.8;}
+  .report-btn .sub{
+    display:block;
+    font-size:11.5px;
+    font-weight:400;
+    opacity:0.6;
+    margin-top:3px;
+  }
 
-    /* ── FORMS ── */
-    label {
-      display: block;
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 6px;
-      letter-spacing: 0.5px;
-    }
+  /* ---------- sections ---------- */
+  .section-title{
+    margin:26px 16px 10px;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    font-weight:600;
+  }
 
-    input {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-      color: var(--text);
-      font-family: 'Heebo', sans-serif;
-      font-size: 16px;
-      margin-bottom: 18px;
-      transition: border-color 0.15s;
-      direction: rtl;
-    }
-    input:focus { outline: none; border-color: var(--accent); }
-    input::placeholder { color: var(--muted); }
+  /* ---------- day blocks ---------- */
+  .day-block{margin:0 16px 0;}
+  .day-head{
+    display:flex;
+    align-items:baseline;
+    gap:9px;
+    margin:22px 0 9px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+  }
+  .day-head .d-num{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:17px;
+    font-weight:500;
+    color:var(--ink);
+  }
+  .day-head .d-date{
+    font-size:11px;
+    color:var(--ink-faint);
+    letter-spacing:0.03em;
+  }
+  .day-head .d-phase{
+    margin-left:auto;
+    font-size:9.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    padding:3px 9px;
+    border-radius:20px;
+    font-weight:600;
+  }
+  .phase-both{background:var(--fml-dim);color:var(--fml);}
+  .phase-taper1{background:#2a2410;color:#c9a24f;}
+  .phase-taper2{background:#1c1c1c;color:var(--ink-dim);}
 
-    /* ── BUTTONS ── */
-    .btn {
-      width: 100%;
-      padding: 14px;
-      border-radius: 10px;
-      border: none;
-      font-family: 'Heebo', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.1s, opacity 0.15s;
-    }
-    .btn:active { transform: scale(0.98); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .dose-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 14px;
+    border-radius:10px;
+    margin-bottom:6px;
+    background:var(--surface);
+    border:1px solid var(--line);
+  }
+  .dose-row.done{background:var(--done-bg);border-color:rgba(95,174,126,0.25);}
+  .dose-row.overdue{background:var(--overdue-bg);border-color:rgba(226,104,90,0.3);}
 
-    .btn-primary { background: var(--accent); color: #0d0f1a; }
-    .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
-    .btn-danger { background: var(--accent2); color: #fff; }
-    .btn-success { background: var(--green); color: #fff; }
-    .btn-sm { width: auto; padding: 8px 18px; font-size: 14px; }
+  .checkbox{
+    width:24px;height:24px;
+    border-radius:7px;
+    border:1.5px solid var(--line);
+    background:var(--surface-raised);
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:14px;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  .checkbox.checked{
+    background:var(--done);
+    border-color:var(--done);
+    color:#000;
+  }
+  .dose-info{flex:1;min-width:0;}
+  .dose-time{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:500;
+    font-size:16px;
+    color:var(--ink);
+  }
+  .dose-med{
+    font-size:11px;
+    letter-spacing:0.02em;
+    margin-top:2px;
+    color:var(--ink-dim);
+  }
+  .med-tag{
+    display:inline-block;
+    padding:2px 7px;
+    border-radius:5px;
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:0.04em;
+    margin-right:6px;
+  }
+  .tag-exo{background:var(--exo-dim);color:var(--exo);}
+  .tag-fml{background:var(--fml-dim);color:var(--fml);}
+  .dose-status{
+    font-size:9.5px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-faint);
+    flex-shrink:0;
+    font-weight:600;
+  }
+  .dose-row.overdue .dose-status{color:var(--overdue);}
+  .dose-row.done .dose-status{color:var(--done);}
 
-    /* ── DIVIDER ── */
-    .divider {
-      display: flex; align-items: center; gap: 12px;
-      margin: 20px 0; color: var(--muted); font-size: 13px;
-    }
-    .divider::before, .divider::after {
-      content: ''; flex: 1;
-      height: 1px; background: var(--border);
-    }
+  /* ---------- timeline ---------- */
+  .timeline{
+    margin:0 16px;
+    border-left:1.5px solid var(--line);
+    padding-left:16px;
+  }
+  .tl-item{
+    position:relative;
+    padding:7px 0;
+    font-size:12.5px;
+    color:var(--ink-dim);
+  }
+  .tl-item::before{
+    content:"";
+    position:absolute;
+    left:-20.5px;
+    top:12px;
+    width:7px;height:7px;
+    border-radius:50%;
+    background:var(--done);
+  }
+  .tl-item.upcoming::before{background:var(--ink-faint);}
+  .tl-item.overdue::before{background:var(--overdue);}
+  .tl-time{font-weight:600;margin-right:7px;color:var(--ink);}
+  .tl-actual{opacity:0.55;font-size:11px;margin-left:7px;}
 
-    /* ── LOBBY ── */
-    .player-list { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
-    .player-item {
-      display: flex; align-items: center; gap: 12px;
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: 10px; padding: 12px 16px;
-    }
-    .player-avatar {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: var(--accent);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 16px; color: #0d0f1a;
-      flex-shrink: 0;
-    }
-    .player-name { font-weight: 600; }
-    .player-host {
-      margin-right: auto;
-      font-size: 11px; color: var(--accent);
-      background: rgba(245,200,66,0.12);
-      padding: 2px 8px; border-radius: 20px;
-    }
-
-    .room-code-box {
-      background: var(--bg); border: 1px dashed var(--accent);
-      border-radius: 10px; padding: 16px;
-      text-align: center; margin-bottom: 24px;
-    }
-    .room-code { font-size: 36px; font-weight: 900; letter-spacing: 8px; color: var(--accent); }
-    .room-code-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
-
-    /* ── GAME ── */
-    .letter-display {
-      font-size: 96px; font-weight: 900;
-      color: var(--accent);
-      text-align: center;
-      line-height: 1;
-      margin: 8px 0 24px;
-      text-shadow: 0 0 60px rgba(245,200,66,0.3);
-    }
-
-    .categories-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .category-field { }
-    .category-label {
-      font-size: 12px; color: var(--muted);
-      margin-bottom: 5px; display: flex; align-items: center; gap: 6px;
-    }
-    .category-icon { font-size: 16px; }
-    .category-input {
-      margin-bottom: 0;
-      border-radius: 8px;
-    }
-    .category-input.filled { border-color: var(--green); }
-
-    /* ── COUNTDOWN ── */
-    .countdown-overlay {
-      position: fixed; inset: 0;
-      background: rgba(13,15,26,0.92);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      z-index: 100;
-    }
-    .countdown-number {
-      font-size: 120px; font-weight: 900;
-      color: var(--accent2);
-      line-height: 1;
-      animation: pulse 1s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.05); opacity: 0.9; }
-    }
-    .countdown-text { color: var(--muted); font-size: 18px; margin-top: 12px; }
-
-    /* ── SCORES ── */
-    .scores-table { width: 100%; border-collapse: collapse; }
-    .scores-table th {
-      padding: 10px 12px; text-align: right;
-      font-size: 12px; color: var(--muted);
-      border-bottom: 1px solid var(--border);
-    }
-    .scores-table td {
-      padding: 12px 12px;
-      border-bottom: 1px solid var(--border);
-    }
-    .scores-table tr:last-child td { border-bottom: none; }
-
-    .answer-cell {
-      display: flex; align-items: center; gap: 8px;
-    }
-    .valid { color: var(--green); }
-    .invalid { color: var(--accent2); text-decoration: line-through; }
-
-    .vote-btn {
-      width: 28px; height: 28px; border-radius: 50%;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      cursor: pointer; font-size: 14px;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.15s;
-    }
-    .vote-btn:hover { background: var(--border); }
-    .vote-btn.active-valid { background: var(--green); border-color: var(--green); }
-    .vote-btn.active-invalid { background: var(--accent2); border-color: var(--accent2); }
-
-    .rank-badge {
-      width: 28px; height: 28px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 13px;
-    }
-    .rank-1 { background: var(--accent); color: #0d0f1a; }
-    .rank-2 { background: #b0bec5; color: #0d0f1a; }
-    .rank-3 { background: #8d6e63; color: #fff; }
-    .rank-other { background: var(--border); color: var(--muted); }
-
-    /* ── TOAST ── */
-    .toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 12px 20px;
-      font-size: 14px; z-index: 200;
-      animation: slideUp 0.2s ease;
-    }
-    @keyframes slideUp {
-      from { transform: translateX(-50%) translateY(20px); opacity: 0; }
-      to { transform: translateX(-50%) translateY(0); opacity: 1; }
-    }
-
-    /* ── STATUS DOTS ── */
-    .status-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .dot-waiting { background: var(--muted); }
-    .dot-done { background: var(--green); }
-
-    /* ── MISC ── */
-    .section-title {
-      font-size: 18px; font-weight: 700; margin-bottom: 16px;
-    }
-    .text-muted { color: var(--muted); font-size: 14px; }
-    .mt-8 { margin-top: 8px; }
-    .mt-16 { margin-top: 16px; }
-    .mt-24 { margin-top: 24px; }
-    .gap-8 { gap: 8px; }
-    .flex { display: flex; }
-    .flex-col { flex-direction: column; }
-    .items-center { align-items: center; }
-    .justify-between { justify-content: space-between; }
-    .text-center { text-align: center; }
-    .error-msg { color: var(--accent2); font-size: 13px; margin-top: -12px; margin-bottom: 12px; }
-
-    .total-score {
-      font-size: 22px; font-weight: 900; color: var(--accent);
-    }
-
-    .finished-banner {
-      background: rgba(45,190,116,0.1); border: 1px solid var(--green);
-      border-radius: 10px; padding: 12px 16px;
-      color: var(--green); font-weight: 600;
-      text-align: center; margin-bottom: 16px;
-      font-size: 14px;
-    }
-
-    @media (max-width: 500px) {
-      .categories-grid { grid-template-columns: 1fr; }
-      .card { padding: 24px 18px; }
-      .letter-display { font-size: 72px; }
-    }
-  </style>
+  /* ---------- footer ---------- */
+  .legend{
+    margin:30px 16px 0;
+    font-size:11px;
+    color:var(--ink-faint);
+    line-height:1.7;
+    border-top:1px solid var(--line);
+    padding-top:16px;
+  }
+  .reset-btn{
+    display:block;
+    margin:24px auto 0;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-faint);
+    font-size:11px;
+    padding:7px 16px;
+    border-radius:20px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .loading{padding:48px 20px;text-align:center;color:var(--ink-faint);font-size:13px;}
+</style>
 </head>
 <body>
-<div id="root"></div>
 
-<script type="text/babel">
-const { useState, useEffect, useRef, useCallback } = React;
+<div class="header">
+  <p class="eyebrow">Post-op eye drop schedule</p>
+  <h1>Drop Log</h1>
+</div>
+<div class="now-strip">
+  <span>Today is <span id="today-label">—</span></span>
+  <span class="live">tracking live</span>
+</div>
 
-// ── SUPABASE CONFIG ──
-// Replace with your own Supabase project credentials
-const SUPABASE_URL = 'https://gvykpkbwpmwgpyflkbum.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2eWtwa2J3cG13Z3B5ZmxrYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzgyNjAsImV4cCI6MjA5NzIxNDI2MH0.bpGFHJzGRK5qLw_cvtO48HmR6HWYAjhPPvCIbZYjQgs';
+<div id="app">
+  <div class="loading">Loading your schedule…</div>
+</div>
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<div id="timeline-section"></div>
 
-// ── CATEGORIES ──
-const CATEGORIES = [
-  { key: 'country', label: 'ארץ', icon: '🌍' },
-  { key: 'city', label: 'עיר', icon: '🏙️' },
-  { key: 'animal', label: 'חי', icon: '🐾' },
-  { key: 'plant', label: 'צומח', icon: '🌿' },
-  { key: 'food', label: 'אוכל', icon: '🍽️' },
-  { key: 'name', label: 'שם פרטי', icon: '👤' },
-  { key: 'object', label: 'חפץ', icon: '📦' },
-  { key: 'movie', label: 'מקצוע', icon: '💼' },
-];
+<div class="legend" id="legend"></div>
+<button class="reset-btn" id="reset-btn">Reset all check-ins</button>
 
-const LETTERS = 'אבגדהוזחטיכלמנסעפצקרשת'.split('');
+<script>
+(function(){
+  // ---- Backend: Cloudflare Pages Function at /api/state, backed by KV ----
+  let SERVER_STATE = { start: null, checkins: {} };
 
-function randomLetter() {
-  return LETTERS[Math.floor(Math.random() * LETTERS.length)];
-}
-
-function generateRoomCode() {
-  return Math.random().toString(36).substring(2, 7).toUpperCase();
-}
-
-// ── TOAST ──
-function Toast({ msg }) {
-  if (!msg) return null;
-  return <div className="toast">{msg}</div>;
-}
-
-// ── LOADING ──
-function Spinner() {
-  return (
-    <div style={{ textAlign: 'center', color: 'var(--muted)', padding: '40px' }}>
-      <div style={{ fontSize: 32, animation: 'pulse 1s infinite' }}>⟳</div>
-    </div>
-  );
-}
-
-// ── AUTH SCREEN ──
-function AuthScreen({ onAuth }) {
-  const [mode, setMode] = useState('login'); // login | register
-  const [nickname, setNickname] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async () => {
-    setError('');
-    if (!email || !password || (mode === 'register' && !nickname)) {
-      setError('אנא מלא את כל השדות');
-      return;
+  async function loadServerState(){
+    try{
+      const res = await fetch('/api/state');
+      if(!res.ok) throw new Error('Server returned ' + res.status);
+      const data = await res.json();
+      SERVER_STATE = { start: data.start || null, checkins: data.checkins || {} };
+    }catch(e){
+      console.error('Could not load state from server', e);
+      throw e;
     }
-    setLoading(true);
-    try {
-      if (mode === 'register') {
-        const { data, error: e } = await supabase.auth.signUp({
-          email, password,
-          options: { data: { nickname } }
-        });
-        if (e) throw e;
-        if (data.user) onAuth({ ...data.user, nickname });
-      } else {
-        const { data, error: e } = await supabase.auth.signInWithPassword({ email, password });
-        if (e) throw e;
-        const nick = data.user.user_metadata?.nickname || email.split('@')[0];
-        onAuth({ ...data.user, nickname: nick });
-      }
-    } catch (e) {
-      setError(e.message === 'Invalid login credentials' ? 'פרטי התחברות שגויים' : e.message);
-    }
-    setLoading(false);
-  };
-
-  return (
-    <div className="screen">
-      <div className="text-center">
-        <div className="logo">ארץ <span>עיר</span></div>
-        <div className="logo-sub">משחק רב משתתפים</div>
-      </div>
-      <div className="card">
-        <div className="section-title">{mode === 'login' ? 'התחברות' : 'הרשמה'}</div>
-
-        {mode === 'register' && (
-          <>
-            <label>כינוי במשחק</label>
-            <input
-              placeholder="למשל: רובי"
-              value={nickname}
-              onChange={e => setNickname(e.target.value)}
-            />
-          </>
-        )}
-
-        <label>כתובת אימייל</label>
-        <input
-          type="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-        />
-
-        <label>סיסמה</label>
-        <input
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-        />
-
-        {error && <div className="error-msg">{error}</div>}
-
-        <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
-          {loading ? 'רגע...' : mode === 'login' ? 'כניסה' : 'יצירת חשבון'}
-        </button>
-
-        <div className="divider">{mode === 'login' ? 'אין לך חשבון?' : 'יש לך כבר חשבון?'}</div>
-
-        <button className="btn btn-secondary" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}>
-          {mode === 'login' ? 'הרשמה' : 'כניסה'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── HOME SCREEN ──
-function HomeScreen({ user, onCreateRoom, onJoinRoom, onLogout }) {
-  const [joinCode, setJoinCode] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleJoin = async () => {
-    if (!joinCode.trim()) { setError('הזן קוד חדר'); return; }
-    setError('');
-    setLoading(true);
-    const { data: room } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('code', joinCode.toUpperCase())
-      .single();
-
-    if (!room) { setError('קוד חדר לא קיים'); setLoading(false); return; }
-    if (room.status !== 'waiting') { setError('המשחק כבר התחיל'); setLoading(false); return; }
-
-    onJoinRoom(room);
-    setLoading(false);
-  };
-
-  return (
-    <div className="screen">
-      <div className="text-center">
-        <div className="logo">ארץ <span>עיר</span></div>
-        <div className="logo-sub">שלום, {user.nickname}!</div>
-      </div>
-      <div className="card">
-        <button className="btn btn-primary" style={{ marginBottom: 12 }} onClick={onCreateRoom}>
-          ➕  יצירת משחק חדש
-        </button>
-
-        <div className="divider">או הצטרפות למשחק קיים</div>
-
-        <label>קוד חדר</label>
-        <input
-          placeholder="ABCDE"
-          value={joinCode}
-          onChange={e => setJoinCode(e.target.value.toUpperCase())}
-          style={{ textAlign: 'center', letterSpacing: 4, fontWeight: 700, fontSize: 20 }}
-        />
-
-        {error && <div className="error-msg">{error}</div>}
-
-        <button className="btn btn-secondary" onClick={handleJoin} disabled={loading}>
-          {loading ? 'מחפש...' : 'הצטרפות'}
-        </button>
-      </div>
-      <button className="btn btn-secondary btn-sm mt-16" style={{ maxWidth: 200, opacity: 0.5 }} onClick={onLogout}>
-        יציאה מהחשבון
-      </button>
-    </div>
-  );
-}
-
-// ── LOBBY SCREEN ──
-function LobbyScreen({ user, room, onGameStart, onLeave }) {
-  if (!room) return null;
-  const [players, setPlayers] = useState([]);
-  const [roomState, setRoomState] = useState(room);
-  const isHost = room.host_id === user.id;
-  const [toast, setToast] = useState('');
-
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
-  };
-
-  // Join as player
-  useEffect(() => {
-    const joinRoom = async () => {
-      await supabase.from('players').upsert({
-        room_id: room.id,
-        user_id: user.id,
-        nickname: user.nickname,
-        is_host: isHost,
-        total_score: 0,
-      }, { onConflict: 'room_id,user_id' });
-    };
-    joinRoom();
-  }, []);
-
-  // Load & subscribe players
-  useEffect(() => {
-    const loadPlayers = async () => {
-      const { data } = await supabase.from('players').select('*').eq('room_id', room.id);
-      setPlayers(data || []);
-    };
-    loadPlayers();
-
-    const ch = supabase.channel(`lobby:${room.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${room.id}` },
-        () => loadPlayers())
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${room.id}` },
-        ({ new: updated }) => {
-          setRoomState(updated);
-          if (updated.status === 'playing') onGameStart(updated);
-        })
-      .subscribe();
-
-    return () => supabase.removeChannel(ch);
-  }, [room.id]);
-
-  const handleStart = async () => {
-    if (players.length < 1) { showToast('צריך לפחות שחקן אחד'); return; }
-    const letter = randomLetter();
-    await supabase.from('rooms').update({
-      status: 'playing',
-      current_letter: letter,
-      round: 1,
-    }).eq('id', room.id);
-  };
-
-  const copyCode = () => {
-    navigator.clipboard.writeText(room.code);
-    showToast('הקוד הועתק!');
-  };
-
-  return (
-    <div className="screen">
-      <div className="card card-wide">
-        <div className="room-code-box" onClick={copyCode} style={{ cursor: 'pointer' }}>
-          <div className="room-code">{room.code}</div>
-          <div className="room-code-label">קוד החדר — לחץ להעתקה</div>
-        </div>
-
-        <div className="section-title">שחקנים ({players.length})</div>
-        <div className="player-list">
-          {players.map(p => (
-            <div className="player-item" key={p.user_id}>
-              <div className="player-avatar">{p.nickname[0]}</div>
-              <div className="player-name">{p.nickname}</div>
-              {p.is_host && <div className="player-host">מארגן</div>}
-            </div>
-          ))}
-        </div>
-
-        {isHost ? (
-          <button className="btn btn-primary mt-16" onClick={handleStart}>
-            🚀  התחל משחק
-          </button>
-        ) : (
-          <div className="text-muted text-center mt-16">ממתין למארגן שיתחיל…</div>
-        )}
-
-        <button className="btn btn-secondary mt-16" onClick={onLeave} style={{ opacity: 0.5 }}>
-          עזיבה
-        </button>
-      </div>
-      <Toast msg={toast} />
-    </div>
-  );
-}
-
-// ── GAME SCREEN ──
-function GameScreen({ user, room, onRoundEnd }) {
-  const [answers, setAnswers] = useState({});
-  const [finished, setFinished] = useState(false);
-  const [countdown, setCountdown] = useState(null);
-  const [players, setPlayers] = useState([]);
-  const [roomState, setRoomState] = useState(room);
-  const [toast, setToast] = useState('');
-  const timerRef = useRef(null);
-
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
-  };
-
-  const letter = roomState.current_letter;
-
-  // Load players & subscribe
-  useEffect(() => {
-    const loadPlayers = async () => {
-      const { data } = await supabase.from('players').select('*').eq('room_id', room.id);
-      setPlayers(data || []);
-    };
-    loadPlayers();
-
-    const ch = supabase.channel(`game:${room.id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${room.id}` },
-        ({ new: updated }) => {
-          setRoomState(updated);
-          if (updated.status === 'scoring') {
-            // Stop countdown if it started from elsewhere
-            onRoundEnd(updated);
-          }
-        })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${room.id}` },
-        () => loadPlayers())
-      .subscribe();
-
-    return () => { supabase.removeChannel(ch); if (timerRef.current) clearInterval(timerRef.current); };
-  }, [room.id]);
-
-  // When countdown reaches 0 → move to scoring
-  const startCountdown = useCallback(async () => {
-    let c = 10;
-    setCountdown(c);
-    timerRef.current = setInterval(async () => {
-      c--;
-      setCountdown(c);
-      if (c <= 0) {
-        clearInterval(timerRef.current);
-        setCountdown(null);
-        // Save answers
-        await saveAnswers();
-        await supabase.from('rooms').update({ status: 'scoring' }).eq('id', room.id);
-      }
-    }, 1000);
-  }, [answers]);
-
-  // Watch for first-finisher
-  useEffect(() => {
-    if (roomState.first_finish_at && countdown === null && !finished) {
-      startCountdown();
-    }
-  }, [roomState.first_finish_at]);
-
-  const saveAnswers = async () => {
-    const answersJson = JSON.stringify(answers);
-    await supabase.from('players').update({ current_answers: answersJson })
-      .eq('room_id', room.id).eq('user_id', user.id);
-  };
-
-  const handleFinish = async () => {
-    setFinished(true);
-    await saveAnswers();
-
-    // If first to finish, record timestamp
-    if (!roomState.first_finish_at) {
-      await supabase.from('rooms').update({ first_finish_at: new Date().toISOString() }).eq('id', room.id);
-      startCountdown();
-    }
-    showToast('סיימת! ממתין לשאר השחקנים…');
-  };
-
-  const filledCount = Object.values(answers).filter(v => v.trim()).length;
-
-  return (
-    <div className="screen">
-      <div className="card card-wide">
-        <div style={{ textAlign: 'center' }}>
-          <div className="text-muted" style={{ fontSize: 13, letterSpacing: 2, marginBottom: 4 }}>
-            סיבוב {roomState.round}
-          </div>
-          <div className="letter-display">{letter}</div>
-        </div>
-
-        {finished && (
-          <div className="finished-banner">
-            ✅ סיימת! ממתין לשאר השחקנים…
-          </div>
-        )}
-
-        <div className="categories-grid">
-          {CATEGORIES.map(cat => (
-            <div className="category-field" key={cat.key}>
-              <div className="category-label">
-                <span className="category-icon">{cat.icon}</span>
-                {cat.label}
-              </div>
-              <input
-                className={`category-input ${answers[cat.key]?.trim() ? 'filled' : ''}`}
-                placeholder={`${cat.label} ב-${letter}`}
-                value={answers[cat.key] || ''}
-                onChange={e => !finished && setAnswers(a => ({ ...a, [cat.key]: e.target.value }))}
-                disabled={finished}
-                dir="rtl"
-              />
-            </div>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
-          <div className="text-muted" style={{ fontSize: 13 }}>{filledCount}/{CATEGORIES.length} שדות מולאו</div>
-          <div className="flex gap-8">
-            {players.map(p => (
-              <div key={p.user_id} title={p.nickname}
-                className={`status-dot ${p.round_finished ? 'dot-done' : 'dot-waiting'}`} />
-            ))}
-          </div>
-        </div>
-
-        {!finished && (
-          <button className="btn btn-success" onClick={handleFinish}>
-            ✅  סיימתי!
-          </button>
-        )}
-      </div>
-
-      {countdown !== null && (
-        <div className="countdown-overlay">
-          <div className="countdown-number">{countdown}</div>
-          <div className="countdown-text">שחקן סיים — סיום בעוד…</div>
-        </div>
-      )}
-
-      <Toast msg={toast} />
-    </div>
-  );
-}
-
-// ── SCORING SCREEN ──
-function ScoringScreen({ user, room, onNextRound, onEndGame, onGoHome }) {
-  const [players, setPlayers] = useState([]);
-  const [votes, setVotes] = useState({}); // { playerId_category: 'valid'|'invalid' }
-  const [scores, setScores] = useState({});
-  const [submittedVotes, setSubmittedVotes] = useState(false);
-  const isHost = room.host_id === user.id;
-  const [roomState, setRoomState] = useState(room);
-
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase.from('players').select('*').eq('room_id', room.id);
-      setPlayers(data || []);
-      // Calculate preliminary scores
-      computeScores(data || []);
-    };
-    load();
-
-    const ch = supabase.channel(`scoring:${room.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${room.id}` },
-        () => load())
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${room.id}` },
-        ({ new: updated }) => {
-          setRoomState(updated);
-          if (updated.status === 'playing') onNextRound(updated);
-          if (updated.status === 'ended') onEndGame();
-        })
-      .subscribe();
-
-    return () => supabase.removeChannel(ch);
-  }, []);
-
-  const computeScores = (pls) => {
-    const sc = {};
-    CATEGORIES.forEach(cat => {
-      const answers = pls.map(p => {
-        try { return (JSON.parse(p.current_answers || '{}'))[cat.key]?.trim().toLowerCase() || ''; }
-        catch { return ''; }
-      });
-      pls.forEach((p, i) => {
-        const ans = answers[i];
-        if (!ans) return;
-        const isDuplicate = answers.filter(a => a === ans).length > 1;
-        const key = `${p.user_id}_${cat.key}`;
-        if (!sc[p.user_id]) sc[p.user_id] = 0;
-        sc[p.user_id] += isDuplicate ? 5 : 10;
-      });
-    });
-    setScores(sc);
-  };
-
-  const toggleVote = (playerId, category, value) => {
-    const key = `${playerId}_${category}`;
-    setVotes(v => ({ ...v, [key]: v[key] === value ? undefined : value }));
-  };
-
-  const getAnswer = (player, catKey) => {
-    try { return JSON.parse(player.current_answers || '{}')[catKey] || '—'; }
-    catch { return '—'; }
-  };
-
-  const handleNextRound = async () => {
-    // Apply votes: mark answers as invalid → deduct points
-    // (simplified: votes affect display, DB stores adjusted score)
-    for (const p of players) {
-      let bonus = 0;
-      CATEGORIES.forEach(cat => {
-        const key = `${p.user_id}_${cat.key}`;
-        if (votes[key] === 'invalid') bonus -= 10;
-      });
-      const base = scores[p.user_id] || 0;
-      await supabase.from('players').update({
-        total_score: (p.total_score || 0) + base + bonus,
-        current_answers: null,
-        round_finished: false,
-      }).eq('room_id', room.id).eq('user_id', p.user_id);
-    }
-
-    if (roomState.round >= 5) {
-      await supabase.from('rooms').update({ status: 'ended' }).eq('id', room.id);
-    } else {
-      await supabase.from('rooms').update({
-        status: 'playing',
-        current_letter: randomLetter(),
-        round: (roomState.round || 1) + 1,
-        first_finish_at: null,
-      }).eq('id', room.id);
-    }
-  };
-
-  const sortedPlayers = [...players].sort((a, b) => (scores[b.user_id] || 0) - (scores[a.user_id] || 0));
-
-  return (
-    <div className="screen">
-      <div className="card card-wide">
-        <div className="section-title">📊 תוצאות — סיבוב {roomState.round}</div>
-        <div className="text-muted" style={{ marginBottom: 20, fontSize: 13 }}>
-          אות: <strong style={{ color: 'var(--accent)', fontSize: 18 }}>{roomState.current_letter}</strong>
-          &nbsp;&nbsp;|&nbsp;&nbsp;
-          לחץ 👍/👎 לאשר או לפסול תשובה
-        </div>
-
-        <div style={{ overflowX: 'auto' }}>
-          <table className="scores-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>שם</th>
-                {CATEGORIES.map(c => <th key={c.key}>{c.icon}</th>)}
-                <th>נקודות</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedPlayers.map((p, idx) => (
-                <tr key={p.user_id}>
-                  <td>
-                    <div className={`rank-badge rank-${idx < 3 ? idx + 1 : 'other'}`}>
-                      {idx + 1}
-                    </div>
-                  </td>
-                  <td style={{ fontWeight: 600 }}>{p.nickname}</td>
-                  {CATEGORIES.map(cat => {
-                    const ans = getAnswer(p, cat.key);
-                    const voteKey = `${p.user_id}_${cat.key}`;
-                    const isInvalid = votes[voteKey] === 'invalid';
-                    return (
-                      <td key={cat.key}>
-                        <div className="answer-cell">
-                          <span className={ans === '—' ? 'text-muted' : isInvalid ? 'invalid' : 'valid'}>
-                            {ans}
-                          </span>
-                          {ans !== '—' && p.user_id !== user.id && (
-                            <div style={{ display: 'flex', gap: 3 }}>
-                              <button
-                                className={`vote-btn ${votes[voteKey] === 'valid' ? 'active-valid' : ''}`}
-                                onClick={() => toggleVote(p.user_id, cat.key, 'valid')}
-                              >👍</button>
-                              <button
-                                className={`vote-btn ${votes[voteKey] === 'invalid' ? 'active-invalid' : ''}`}
-                                onClick={() => toggleVote(p.user_id, cat.key, 'invalid')}
-                              >👎</button>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    );
-                  })}
-                  <td><span className="total-score">{scores[p.user_id] || 0}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {isHost && (
-          <button className="btn btn-primary mt-24" onClick={handleNextRound}>
-            {roomState.round >= 5 ? '🏆 סיום המשחק' : '➡️ סיבוב הבא'}
-          </button>
-        )}
-        {!isHost && (
-          <div className="text-muted text-center mt-24">ממתין למארגן שיעבור לסיבוב הבא…</div>
-        )}
-        <button className="btn btn-secondary btn-sm" style={{ marginTop: 16, opacity: 0.7 }} onClick={onGoHome}>
-          🚪 עזוב משחק
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── FINAL SCREEN ──
-function FinalScreen({ user, room, onPlayAgain, onGoHome }) {
-  const [players, setPlayers] = useState([]);
-
-  useEffect(() => {
-    supabase.from('players').select('*').eq('room_id', room.id)
-      .then(({ data }) => setPlayers((data || []).sort((a, b) => b.total_score - a.total_score)));
-  }, []);
-
-  const medals = ['🥇', '🥈', '🥉'];
-
-  return (
-    <div className="screen">
-      <div className="card card-wide">
-        <div className="text-center" style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 48 }}>🏆</div>
-          <div className="section-title" style={{ fontSize: 24, marginTop: 8 }}>סיום המשחק!</div>
-        </div>
-
-        <div className="player-list">
-          {players.map((p, i) => (
-            <div className="player-item" key={p.user_id} style={i === 0 ? { border: '1px solid var(--accent)' } : {}}>
-              <div style={{ fontSize: 28 }}>{medals[i] || `#${i + 1}`}</div>
-              <div className="player-avatar">{p.nickname[0]}</div>
-              <div>
-                <div className="player-name">{p.nickname}</div>
-                <div className="text-muted" style={{ fontSize: 12 }}>סה"כ נקודות</div>
-              </div>
-              <div className="total-score" style={{ marginRight: 'auto' }}>
-                {p.total_score}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <button className="btn btn-primary mt-24" onClick={onPlayAgain}>
-          🔄 משחק חדש
-        </button>
-        <button className="btn btn-secondary" style={{ marginTop: 10 }} onClick={onGoHome}>
-          🏠 חזרה לראשי
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── APP ──
-function App() {
-  const [user, setUser] = useState(null);
-  const [room, setRoom] = useState(null);
-  const [phase, setPhase] = useState('home'); // home | lobby | game | scoring | final
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const nick = session.user.user_metadata?.nickname || session.user.email.split('@')[0];
-        setUser({ ...session.user, nickname: nick });
-      }
-      setLoading(false);
-    });
-    supabase.auth.onAuthStateChange((_, session) => {
-      if (session?.user) {
-        const nick = session.user.user_metadata?.nickname || session.user.email.split('@')[0];
-        setUser({ ...session.user, nickname: nick });
-      } else {
-        setUser(null);
-        setRoom(null);
-        setPhase('home');
-      }
-    });
-  }, []);
-
-  const handleCreateRoom = async () => {
-    const code = generateRoomCode();
-    const { data } = await supabase.from('rooms').insert({
-      code,
-      host_id: user.id,
-      status: 'waiting',
-      round: 0,
-    }).select().single();
-    setRoom(data);
-    setPhase('lobby');
-  };
-
-  const handleJoinRoom = (r) => {
-    setRoom(r);
-    setPhase('lobby');
-  };
-
-  const handleGameStart = (updatedRoom) => {
-    setRoom(updatedRoom);
-    setPhase('game');
-  };
-
-  const handleRoundEnd = (updatedRoom) => {
-    setRoom(updatedRoom);
-    setPhase('scoring');
-  };
-
-  const handleNextRound = (updatedRoom) => {
-    setRoom(updatedRoom);
-    setPhase('game');
-  };
-
-  const handleEndGame = () => setPhase('final');
-
-  const handleGoHome = async () => {
-    setRoom(null);
-    setPhase('home');
-  };
-
-  const handlePlayAgain = () => {
-    setRoom(null);
-    setPhase('home');
-  };
-
-  if (loading) return <div className="screen"><Spinner /></div>;
-  if (!user) return <AuthScreen onAuth={u => { setUser(u); }} />;
-
-  switch (phase) {
-    case 'lobby':
-      return <LobbyScreen user={user} room={room} onGameStart={handleGameStart} onLeave={() => { setRoom(null); setPhase('home'); }} />;
-    case 'game':
-      return <GameScreen user={user} room={room} onRoundEnd={handleRoundEnd} />;
-    case 'scoring':
-      return <ScoringScreen user={user} room={room} onNextRound={handleNextRound} onEndGame={handleEndGame} onGoHome={handleGoHome} />;
-    case 'final':
-      return <FinalScreen user={user} room={room} onPlayAgain={handlePlayAgain} onGoHome={handleGoHome} />;
-    default:
-      return <HomeScreen user={user} onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} onLogout={() => supabase.auth.signOut()} />;
+    return SERVER_STATE;
   }
-}
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  async function saveServerState(partial){
+    SERVER_STATE = { ...SERVER_STATE, ...partial };
+    try{
+      await fetch('/api/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(partial)
+      });
+    }catch(e){
+      console.error('Could not save state to server', e);
+    }
+  }
+
+  async function getStart(){
+    if(SERVER_STATE.start){
+      return new Date(SERVER_STATE.start);
+    }
+    const start = new Date(Date.now() - 4*60*60*1000);
+    await saveServerState({ start: start.toISOString() });
+    return start;
+  }
+
+  async function getCheckins(){
+    return SERVER_STATE.checkins || {};
+  }
+
+  async function saveCheckins(obj){
+    await saveServerState({ checkins: obj });
+  }
+
+  function fmtTime(d){
+    return d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  }
+  function fmtDateShort(d){
+    return d.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'});
+  }
+  function dayIndexOf(d, start){
+    const diff = d - start;
+    return Math.floor(diff / (24*60*60*1000));
+  }
+
+  function buildDoses(start){
+    const doses = [];
+
+    // EXOCIN: every 6h for 7 days
+    let t = new Date(start);
+    const exocinEnd = new Date(start.getTime() + 7*24*60*60*1000);
+    while(t < exocinEnd){
+      doses.push({med:'EXOCIN', time:new Date(t), tag:'tag-exo', label:'Exocin · 1 drop'});
+      t = new Date(t.getTime() + 6*60*60*1000);
+    }
+
+    // FML: days 1-5 q6h, days 6-10 q12h, days 11-15 q24h
+    t = new Date(start);
+    const phase1End = new Date(start.getTime() + 5*24*60*60*1000);
+    const phase2End = new Date(start.getTime() + 10*24*60*60*1000);
+    const phase3End = new Date(start.getTime() + 15*24*60*60*1000);
+
+    while(t < phase1End){
+      doses.push({med:'FML', time:new Date(t), tag:'tag-fml', label:'FML · 1 drop (q6h)'});
+      t = new Date(t.getTime() + 6*60*60*1000);
+    }
+    while(t < phase2End){
+      doses.push({med:'FML', time:new Date(t), tag:'tag-fml', label:'FML · 1 drop (q12h)'});
+      t = new Date(t.getTime() + 12*60*60*1000);
+    }
+    while(t < phase3End){
+      doses.push({med:'FML', time:new Date(t), tag:'tag-fml', label:'FML · 1 drop (q24h)'});
+      t = new Date(t.getTime() + 24*60*60*1000);
+    }
+
+    doses.sort((a,b)=>a.time-b.time);
+    doses.forEach(d=> d.id = d.med+'-'+d.time.getTime());
+    return doses;
+  }
+
+  function phaseForDay(dayIdx){
+    if(dayIdx < 5) return {cls:'phase-both', label:'q6h · both'};
+    if(dayIdx < 10) return {cls:'phase-taper1', label:'FML q12h'};
+    if(dayIdx < 15) return {cls:'phase-taper2', label:'FML q24h'};
+    return {cls:'phase-taper2', label:'done'};
+  }
+
+  let START, DOSES, CHECKINS;
+
+  async function render(){
+    const now = new Date();
+    document.getElementById('today-label').textContent = fmtDateShort(now);
+
+    const app = document.getElementById('app');
+    app.innerHTML = '';
+
+    const totalExo = DOSES.filter(d=>d.med==='EXOCIN').length;
+    const totalFml = DOSES.filter(d=>d.med==='FML').length;
+    const doneExo = DOSES.filter(d=>d.med==='EXOCIN' && CHECKINS[d.id]).length;
+    const doneFml = DOSES.filter(d=>d.med==='FML' && CHECKINS[d.id]).length;
+
+    const summary = document.createElement('div');
+    summary.className = 'summary';
+    summary.innerHTML = `
+      <div class="pill exocin"><div class="num">${doneExo}/${totalExo}</div><div class="lbl"><span class="dot"></span>Exocin</div></div>
+      <div class="pill fml"><div class="num">${doneFml}/${totalFml}</div><div class="lbl"><span class="dot"></span>FML</div></div>
+    `;
+    app.appendChild(summary);
+
+    const upcoming = DOSES.filter(d => !CHECKINS[d.id]).sort((a,b)=>a.time-b.time)[0];
+    if(upcoming){
+      const overdue = upcoming.time - now < 0;
+      const nu = document.createElement('div');
+      nu.className = 'next-up' + (overdue ? ' is-overdue' : '');
+      nu.innerHTML = `
+        <div class="tag">${overdue ? 'overdue' : 'next dose'}</div>
+        <div class="when">${fmtTime(upcoming.time)}</div>
+        <div class="what">${upcoming.label}</div>
+      `;
+      app.appendChild(nu);
+
+      const reportBtn = document.createElement('button');
+      reportBtn.className = 'report-btn';
+      reportBtn.innerHTML = `I just took this dose
+        <span class="sub">Logs ${upcoming.med} now at ${fmtTime(now)}</span>`;
+      reportBtn.addEventListener('click', async ()=>{
+        CHECKINS[upcoming.id] = new Date().toISOString();
+        await saveCheckins(CHECKINS);
+        render();
+      });
+      app.appendChild(reportBtn);
+    } else {
+      const nu = document.createElement('div');
+      nu.className = 'next-up';
+      nu.innerHTML = `<div class="tag">complete</div><div class="when">All done</div><div class="what">15-day course finished</div>`;
+      app.appendChild(nu);
+    }
+
+    const byDay = {};
+    DOSES.forEach(d=>{
+      const idx = dayIndexOf(d.time, START);
+      if(!byDay[idx]) byDay[idx] = [];
+      byDay[idx].push(d);
+    });
+
+    const dayWrap = document.createElement('div');
+    dayWrap.className = 'day-block';
+
+    Object.keys(byDay).sort((a,b)=>a-b).forEach(dayIdx=>{
+      const dayDoses = byDay[dayIdx];
+      const dayDate = dayDoses[0].time;
+      const phase = phaseForDay(parseInt(dayIdx));
+
+      const head = document.createElement('div');
+      head.className = 'day-head';
+      head.innerHTML = `
+        <span class="d-num">Day ${parseInt(dayIdx)+1}</span>
+        <span class="d-date">${fmtDateShort(dayDate)}</span>
+        <span class="d-phase ${phase.cls}">${phase.label}</span>
+      `;
+      dayWrap.appendChild(head);
+
+      dayDoses.forEach(dose=>{
+        const row = document.createElement('div');
+        const isDone = !!CHECKINS[dose.id];
+        const isOverdue = !isDone && dose.time < now;
+        row.className = 'dose-row' + (isDone ? ' done' : '') + (isOverdue ? ' overdue' : '');
+
+        const medShort = dose.med === 'EXOCIN' ? 'EXO' : 'FML';
+        const detailPart = dose.label.split('·')[1] ? dose.label.split('·')[1].trim() : '1 drop';
+
+        row.innerHTML = `
+          <div class="checkbox ${isDone?'checked':''}" data-id="${dose.id}">${isDone ? '✓' : ''}</div>
+          <div class="dose-info">
+            <div class="dose-time">${fmtTime(dose.time)}</div>
+            <div class="dose-med"><span class="med-tag ${dose.tag}">${medShort}</span>${detailPart}</div>
+          </div>
+          <div class="dose-status">${isDone ? 'taken' : (isOverdue ? 'overdue' : '')}</div>
+        `;
+        dayWrap.appendChild(row);
+      });
+    });
+
+    app.appendChild(dayWrap);
+
+    app.querySelectorAll('.checkbox').forEach(cb=>{
+      cb.addEventListener('click', async ()=>{
+        const id = cb.getAttribute('data-id');
+        if(CHECKINS[id]){
+          delete CHECKINS[id];
+        } else {
+          CHECKINS[id] = new Date().toISOString();
+        }
+        await saveCheckins(CHECKINS);
+        render();
+      });
+    });
+
+    renderTimeline(now);
+  }
+
+  function renderTimeline(now){
+    const tlSection = document.getElementById('timeline-section');
+    tlSection.innerHTML = '';
+
+    const taken = DOSES.filter(d => CHECKINS[d.id]).sort((a,b)=> new Date(CHECKINS[a.id]) - new Date(CHECKINS[b.id]));
+    const remaining = DOSES.filter(d => !CHECKINS[d.id]).sort((a,b)=>a.time-b.time).slice(0,6);
+
+    if(taken.length){
+      const title = document.createElement('div');
+      title.className = 'section-title';
+      title.textContent = `Taken so far (${taken.length})`;
+      tlSection.appendChild(title);
+
+      const tl = document.createElement('div');
+      tl.className = 'timeline';
+      taken.slice().reverse().forEach(d=>{
+        const actualTime = new Date(CHECKINS[d.id]);
+        const medShort = d.med === 'EXOCIN' ? 'EXO' : 'FML';
+        const item = document.createElement('div');
+        item.className = 'tl-item';
+        item.innerHTML = `<span class="tl-time">${fmtTime(d.time)}</span>${medShort} scheduled<span class="tl-actual">→ logged ${fmtTime(actualTime)}, ${fmtDateShort(actualTime)}</span>`;
+        tl.appendChild(item);
+      });
+      tlSection.appendChild(tl);
+    }
+
+    if(remaining.length){
+      const title2 = document.createElement('div');
+      title2.className = 'section-title';
+      title2.textContent = 'Coming up next';
+      tlSection.appendChild(title2);
+
+      const tl2 = document.createElement('div');
+      tl2.className = 'timeline';
+      remaining.forEach(d=>{
+        const medShort = d.med === 'EXOCIN' ? 'EXO' : 'FML';
+        const isOverdue = d.time < now;
+        const item = document.createElement('div');
+        item.className = 'tl-item upcoming' + (isOverdue ? ' overdue' : '');
+        item.innerHTML = `<span class="tl-time">${fmtTime(d.time)}</span>${medShort}${isOverdue ? ' — overdue' : ''} · ${fmtDateShort(d.time)}`;
+        tl2.appendChild(item);
+      });
+      tlSection.appendChild(tl2);
+    }
+  }
+
+  document.getElementById('legend').innerHTML = `
+    EXOCIN (antibiotic): 1 drop every 6h for 7 days · 28 doses total<br>
+    FML (steroid taper): days 1–5 q6h, days 6–10 q12h, days 11–15 q24h · tap a box to check off, tap again to undo
+  `;
+
+  document.getElementById('reset-btn').addEventListener('click', async ()=>{
+    if(confirm('Clear all check-ins? This cannot be undone.')){
+      CHECKINS = {};
+      await saveCheckins(CHECKINS);
+      render();
+    }
+  });
+
+  (async function init(){
+    const loadingTimeout = setTimeout(()=>{
+      const app = document.getElementById('app');
+      if(app && app.innerHTML.includes('Loading your schedule')){
+        app.innerHTML = '<div class="loading">Still working — if this stays stuck, tap the menu (•••) and reload.</div>';
+      }
+    }, 4000);
+
+    try{
+      await loadServerState();
+      START = await getStart();
+      CHECKINS = await getCheckins();
+      DOSES = buildDoses(START);
+      clearTimeout(loadingTimeout);
+      render();
+      setInterval(render, 60000);
+    }catch(e){
+      clearTimeout(loadingTimeout);
+      const app = document.getElementById('app');
+      app.innerHTML = '<div class="loading">Something went wrong loading the schedule: ' + (e && e.message ? e.message : String(e)) + '</div>';
+      console.error(e);
+    }
+  })();
+})();
 </script>
+
 </body>
 </html>
