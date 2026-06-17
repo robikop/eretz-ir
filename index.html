@@ -749,7 +749,7 @@ function GameScreen({ user, room, onRoundEnd }) {
 }
 
 // ── SCORING SCREEN ──
-function ScoringScreen({ user, room, onNextRound, onEndGame }) {
+function ScoringScreen({ user, room, onNextRound, onEndGame, onGoHome }) {
   const [players, setPlayers] = useState([]);
   const [votes, setVotes] = useState({}); // { playerId_category: 'valid'|'invalid' }
   const [scores, setScores] = useState({});
@@ -910,13 +910,16 @@ function ScoringScreen({ user, room, onNextRound, onEndGame }) {
         {!isHost && (
           <div className="text-muted text-center mt-24">ממתין למארגן שיעבור לסיבוב הבא…</div>
         )}
+        <button className="btn btn-secondary btn-sm" style={{ marginTop: 16, opacity: 0.7 }} onClick={onGoHome}>
+          🚪 עזוב משחק
+        </button>
       </div>
     </div>
   );
 }
 
 // ── FINAL SCREEN ──
-function FinalScreen({ user, room, onPlayAgain }) {
+function FinalScreen({ user, room, onPlayAgain, onGoHome }) {
   const [players, setPlayers] = useState([]);
 
   useEffect(() => {
@@ -952,6 +955,9 @@ function FinalScreen({ user, room, onPlayAgain }) {
 
         <button className="btn btn-primary mt-24" onClick={onPlayAgain}>
           🔄 משחק חדש
+        </button>
+        <button className="btn btn-secondary" style={{ marginTop: 10 }} onClick={onGoHome}>
+          🏠 חזרה לראשי
         </button>
       </div>
     </div>
@@ -1019,6 +1025,11 @@ function App() {
 
   const handleEndGame = () => setPhase('final');
 
+  const handleGoHome = async () => {
+    setRoom(null);
+    setPhase('home');
+  };
+
   const handlePlayAgain = () => {
     setRoom(null);
     setPhase('home');
@@ -1033,9 +1044,9 @@ function App() {
     case 'game':
       return <GameScreen user={user} room={room} onRoundEnd={handleRoundEnd} />;
     case 'scoring':
-      return <ScoringScreen user={user} room={room} onNextRound={handleNextRound} onEndGame={handleEndGame} />;
+      return <ScoringScreen user={user} room={room} onNextRound={handleNextRound} onEndGame={handleEndGame} onGoHome={handleGoHome} />;
     case 'final':
-      return <FinalScreen user={user} room={room} onPlayAgain={handlePlayAgain} />;
+      return <FinalScreen user={user} room={room} onPlayAgain={handlePlayAgain} onGoHome={handleGoHome} />;
     default:
       return <HomeScreen user={user} onCreateRoom={handleCreateRoom} onJoinRoom={handleJoinRoom} onLogout={() => supabase.auth.signOut()} />;
   }
