@@ -502,6 +502,7 @@ function HomeScreen({ user, onCreateRoom, onJoinRoom, onLogout }) {
 
 // ── LOBBY SCREEN ──
 function LobbyScreen({ user, room, onGameStart, onLeave }) {
+  if (!room) return null;
   const [players, setPlayers] = useState([]);
   const [roomState, setRoomState] = useState(room);
   const isHost = room.host_id === user.id;
